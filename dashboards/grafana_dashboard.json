@@ -1,0 +1,15 @@
+{
+  "title": "Edge Gateway Demo",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Sensor Values",
+      "targets": [
+        {
+          "query": "from(bucket: \"edge\") |> range(start: -5m)"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s"
+}
