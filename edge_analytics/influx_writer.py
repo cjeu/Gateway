@@ -9,11 +9,17 @@ Writes:
 
 from influxdb_client import InfluxDBClient, Point
 import yaml
+from pathlib import Path
 
-CONFIG_PATH = "../config/influx_config.yaml"
 
-with open(CONFIG_PATH) as f:
+BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_DIR=BASE_DIR/"config"
+
+with open(CONFIG_DIR / "influx_config.yaml","r") as f: 
     cfg = yaml.safe_load(f)
+    
+
+
 
 class InfluxWriter:
     def __init__(self):

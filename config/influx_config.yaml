@@ -1,0 +1,7 @@
+#influxDB connection
+url: http://localhost:8086
+org: edge-org
+bucket: edge
+
+#replace with the real token from InfluxDB UI
+token: edge-token

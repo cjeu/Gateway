@@ -9,6 +9,15 @@ Used to:
 
 from flask import Flask
 from routes import api
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_DIR=BASE_DIR/"config"
+
+    
+with open(CONFIG_DIR / "thresholds.yaml","r") as f: 
+    thresholds = yaml.safe_load(f)
+
 
 app = Flask(__name__)
 app.register_blueprint(api)

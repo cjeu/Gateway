@@ -1,0 +1,10 @@
+simulation_mode: normal
+
+temperature:
+	max: 50
+
+humidity:
+	max: 95
+
+Vibration:
+	max: 2.0

@@ -1,6 +1,7 @@
 import json
 import time
 import yaml
+from pathlib import Path
 import paho.mqtt.client as mqtt
 
 from sensor_models import (
@@ -10,11 +11,19 @@ from sensor_models import (
 )
 from modes import SimulationMode, apply_mode
 
-CONFIG_PATH = "../config/mqtt_config.yaml"
-MODE_PATH = "../config/thresholds.yaml"  # reused for demo simplicity
 
-with open(CONFIG_PATH) as f:
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_DIR=BASE_DIR/"config"
+
+with open(CONFIG_DIR / "mqtt_config.yaml","r") as f: 
     mqtt_cfg = yaml.safe_load(f)
+    
+with open(CONFIG_DIR / "thresholds.yaml","r") as f: 
+    thresholds = yaml.safe_load(f)
+
+
+
 
 client = mqtt.Client()
 client.connect(mqtt_cfg["broker"], mqtt_cfg["port"], 60)

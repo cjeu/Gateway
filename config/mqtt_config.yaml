@@ -1,0 +1,10 @@
+#MQTT broker Configuration
+
+broker: localhost
+port: 1883
+
+#Topic used by simulator and analytics
+topic: edge/rpi-01/sensors/raw
+
+#publish interval in seconds
+publish_interval:1

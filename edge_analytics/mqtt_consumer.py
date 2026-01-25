@@ -13,11 +13,21 @@ import paho.mqtt.client as mqtt
 from analytics_engine import AnalyticsEngine
 from influx_writer import InfluxWriter
 from mqtt.topics import SENSORS_RAW
+from pathlib import Path
 
-CONFIG_PATH = "../config/mqtt_config.yaml"
 
-with open(CONFIG_PATH) as f:
+BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_DIR=BASE_DIR/"config"
+
+with open(CONFIG_DIR / "mqtt_config.yaml","r") as f: 
     mqtt_cfg = yaml.safe_load(f)
+    
+with open(CONFIG_DIR / "thresholds.yaml","r") as f: 
+    thresholds = yaml.safe_load(f)
+
+
+
+
 
 analytics = AnalyticsEngine()
 influx = InfluxWriter()
