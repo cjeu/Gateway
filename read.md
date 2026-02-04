@@ -3,10 +3,7 @@
 ## Overview
 This demo turns a Raspberry Pi into a **self-contained industrial edge gateway**.
 It ingests sensor telemetry, performs **local analytics**, stores results locally,
-and exposes **live dashboards and control APIs** — all on one device.
-
-Designed for **interviews, client demos, and trade fairs**.
-No toy LEDs. Real tools. Real architecture.
+and exposes **live dashboards and control APIs** — all on one device. The idea is to envision this as a smart factory solution ingesting live data and helping on floor operators get live input. 
 
 ---
 
@@ -27,7 +24,7 @@ No toy LEDs. Real tools. Real architecture.
 - Runs fully offline on the Pi
 
 ### 3. Visualization
-- **Grafana** dashboards
+- **Grafana** dashboards (Not yet functional)
 - Live charts
 - Alert states
 - Same dashboard scales to many devices
@@ -39,16 +36,6 @@ No toy LEDs. Real tools. Real architecture.
 
 ---
 
-## Why This Matters (Interview Framing)
-
-- Demonstrates **system-level thinking**
-- Clear **edge vs cloud responsibility split**
-- Uses **industry-standard tools**
-- Easy migration path to real sensors
-- Scales linearly to thousands of devices
-
----
-
 ## Architecture Summary
 
 - Python for simulation, analytics, and control
@@ -56,7 +43,7 @@ No toy LEDs. Real tools. Real architecture.
 - InfluxDB for time-series storage
 - Grafana for visualization
 - Flask for REST control
-- Docker for infra services
+- Docker for infra services  --> not functional
 
 All running locally on one Raspberry Pi.
 
@@ -83,36 +70,11 @@ Copy code
 ## Running the Demo
 
 ```bash
-./scripts/start_all.sh
+./scripts/start_demo_pi5.sh
 Access:
 
 Grafana: http://localhost:3000
-
+InfluxDB: http://localhost:8086
 Control API: http://localhost:5000
 
 MQTT: localhost:1883
-
-Optional remote access:
-
-bash
-Copy code
-./scripts/expose_ngrok.sh
-Live Demo Flow (Recommended)
-Open Grafana → normal sensor behavior
-
-POST /mode → fault
-
-Graphs spike, alerts trigger
-
-Explain how this maps to real industrial failures
-
-Extension Ideas
-Replace simulator with real sensors
-
-Bridge MQTT to cloud
-
-Add TLS + cert-based auth
-
-OTA updates
-
-Fleet management dashboard
