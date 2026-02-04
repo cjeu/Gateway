@@ -1,45 +1,27 @@
-"""
-MQTT consumer for edge analytics.
-
-- Subscribes to raw sensor telemetry
-- Passes data to analytics engine
-- Writes enriched results to InfluxDB
-"""
-
 import json
 import yaml
-import paho.mqtt.client as mqtt
-
-from analytics_engine import AnalyticsEngine
-from influx_writer import InfluxWriter
-from mqtt.topics import SENSORS_RAW
 from pathlib import Path
-
+import paho.mqtt.client as mqtt
+from analytics_engine import process_metrics
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-CONFIG_DIR=BASE_DIR/"config"
+CONFIG_DIR = BASE_DIR / "config"
 
-with open(CONFIG_DIR / "mqtt_config.yaml","r") as f: 
+with open(CONFIG_DIR / "mqtt_config.yaml") as f:
     mqtt_cfg = yaml.safe_load(f)
-    
-with open(CONFIG_DIR / "thresholds.yaml","r") as f: 
-    thresholds = yaml.safe_load(f)
 
-
-
-
-
-analytics = AnalyticsEngine()
-influx = InfluxWriter()
+BROKER = mqtt_cfg["broker"]
+PORT = mqtt_cfg["port"]
+TOPIC = mqtt_cfg["topic"]
 
 def on_message(client, userdata, msg):
-    payload = json.loads(msg.payload.decode())
-    result = analytics.process(payload)
-    influx.write(result)
+    data = json.loads(msg.payload.decode())
+    process_metrics(data)
 
 client = mqtt.Client()
-client.connect(mqtt_cfg["broker"], mqtt_cfg["port"], 60)
-client.subscribe(SENSORS_RAW, qos=1)
 client.on_message = on_message
+client.connect(BROKER, PORT, 60)
+client.subscribe(TOPIC)
 
+print("MQTT consumer started")
 client.loop_forever()

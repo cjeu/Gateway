@@ -1,52 +1,65 @@
-"""
-Core edge analytics logic.
-
-Implements:
-- Rolling averages
-- Threshold checks
-- Anomaly detection
-"""
-
-from collections import deque
-from anomaly import is_anomalous
 import yaml
+from pathlib import Path
+from collections import deque
+from influx_writer import write_metrics, close_client
+import atexit
 
-THRESHOLD_PATH = "../config/thresholds.yaml"
+# Ensure InfluxDB flushes on exit
+atexit.register(close_client)
 
-with open(THRESHOLD_PATH) as f:
-    thresholds = yaml.safe_load(f)
+# ----------------------------
+# Base directories
+# ----------------------------
+BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_DIR = BASE_DIR / "config"
 
-WINDOW = 10  # rolling window size
+# ----------------------------
+# Load thresholds (case-insensitive)
+# ----------------------------
+with open(CONFIG_DIR / "thresholds.yaml") as f:
+    raw_thresholds = yaml.safe_load(f)
 
-class AnalyticsEngine:
-    def __init__(self):
-        self.buffers = {
-            "temperature": deque(maxlen=WINDOW),
-            "humidity": deque(maxlen=WINDOW),
-            "vibration": deque(maxlen=WINDOW),
-        }
+# Normalize thresholds keys to lowercase
+thresholds = {k.lower(): v for k, v in raw_thresholds.items() if isinstance(v, dict)}
 
-    def process(self, data):
-        result = {
-            "ts": data["ts"],
-            "mode": data["mode"],
-            "metrics": {},
-            "alerts": {},
-        }
+# ----------------------------
+# Moving average window
+# ----------------------------
+WINDOW = 5
 
-        for key in ["temperature", "humidity", "vibration"]:
-            value = data[key]
-            self.buffers[key].append(value)
+# Buffers for metrics (auto-create)
+buffers = {}
 
-            avg = sum(self.buffers[key]) / len(self.buffers[key])
-            alert = value > thresholds[key]["max"]
-            anomaly = is_anomalous(self.buffers[key], value)
+# ----------------------------
+# Process metrics
+# ----------------------------
+def process_metrics(data: dict):
+    """
+    Processes incoming sensor metrics:
+    - Computes moving average over WINDOW
+    - Determines alerts based on thresholds
+    - Writes data + alerts to InfluxDB synchronously
+    """
+    alerts = {}
 
-            result["metrics"][key] = {
-                "value": value,
-                "avg": round(avg, 2),
-            }
+    for key, value in data.items():
+        key_lower = key.lower()
 
-            result["alerts"][key] = alert or anomaly
+        # Initialize buffer if missing
+        if key_lower not in buffers:
+            buffers[key_lower] = deque(maxlen=WINDOW)
 
-        return result
+        # Append value
+        buffers[key_lower].append(value)
+        avg = sum(buffers[key_lower]) / len(buffers[key_lower])
+
+        # Check threshold if exists
+        if key_lower in thresholds:
+            max_th = thresholds[key_lower].get("max", None)
+            alerts[key_lower] = avg > max_th if max_th is not None else False
+        else:
+            alerts[key_lower] = False
+            print(f"[Analytics] No threshold defined for {key}, skipping alert check")
+
+    # Write to InfluxDB
+    write_metrics(data, alerts)

@@ -1,26 +1,38 @@
-"""
-Flask entry point for edge gateway control API.
-
-Used to:
-- Query latest values
-- Change simulation mode
-- Update thresholds
-"""
-
-from flask import Flask
-from routes import api
+from flask import Flask, jsonify, request
+import yaml
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-CONFIG_DIR=BASE_DIR/"config"
-
-    
-with open(CONFIG_DIR / "thresholds.yaml","r") as f: 
-    thresholds = yaml.safe_load(f)
-
-
 app = Flask(__name__)
-app.register_blueprint(api)
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+CONFIG_DIR = BASE_DIR / "config"
+THRESH_FILE = CONFIG_DIR / "thresholds.yaml"
+
+def load_thresholds():
+    with open(THRESH_FILE) as f:
+        return yaml.safe_load(f)
+
+def save_thresholds(data):
+    with open(THRESH_FILE, "w") as f:
+        yaml.safe_dump(data, f)
+
+@app.route("/thresholds", methods=["GET", "POST"])
+def thresholds():
+    data = load_thresholds()
+
+    if request.method == "POST":
+        update = request.json
+        data.update(update)
+        save_thresholds(data)
+
+    return jsonify(data)
+
+@app.route("/mode/<mode>", methods=["POST"])
+def set_mode(mode):
+    data = load_thresholds()
+    data["simulation_mode"] = mode
+    save_thresholds(data)
+    return jsonify({"mode": mode})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

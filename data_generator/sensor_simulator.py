@@ -1,61 +1,48 @@
-import json
 import time
+import json
+import random
 import yaml
 from pathlib import Path
 import paho.mqtt.client as mqtt
 
-from sensor_models import (
-    TemperatureSensor,
-    HumiditySensor,
-    VibrationSensor,
-)
-from modes import SimulationMode, apply_mode
-
-
-
+# ---------- Config loading ----------
 BASE_DIR = Path(__file__).resolve().parent.parent
-CONFIG_DIR=BASE_DIR/"config"
+CONFIG_DIR = BASE_DIR / "config"
 
-with open(CONFIG_DIR / "mqtt_config.yaml","r") as f: 
+with open(CONFIG_DIR / "mqtt_config.yaml") as f:
     mqtt_cfg = yaml.safe_load(f)
-    
-with open(CONFIG_DIR / "thresholds.yaml","r") as f: 
+
+with open(CONFIG_DIR / "thresholds.yaml") as f:
     thresholds = yaml.safe_load(f)
+# -----------------------------------
 
-
-
+BROKER = mqtt_cfg["broker"]
+PORT = mqtt_cfg["port"]
+TOPIC = mqtt_cfg["topic"]
+INTERVAL = mqtt_cfg.get("publish_interval", 1)
 
 client = mqtt.Client()
-client.connect(mqtt_cfg["broker"], mqtt_cfg["port"], 60)
+client.connect(BROKER, PORT, 60)
 
-temp = TemperatureSensor(base=22.0, noise=0.3)
-hum = HumiditySensor(base=50.0, noise=1.0)
-vib = VibrationSensor(base=0.0, noise=0.05)
+def generate_sensor_data():
+    mode = thresholds.get("simulation_mode", "normal")
 
-def get_mode():
-    try:
-        with open(MODE_PATH) as f:
-            mode = yaml.safe_load(f).get("simulation_mode", "normal")
-            return SimulationMode(mode)
-    except Exception:
-        return SimulationMode.NORMAL
+    temp = random.uniform(20, 25)
+    hum = random.uniform(40, 60)
+    vib = random.uniform(0.2, 0.6)
 
-while True:
-    mode = get_mode()
-    params = apply_mode(mode)
+    if mode == "fault":
+        temp += random.uniform(10, 20)
+        vib += random.uniform(2, 4)
 
-    payload = {
-        "temperature": temp.read(fault=params["fault"]),
-        "humidity": hum.read(fault=params["fault"]),
-        "vibration": vib.read(fault=params["fault"]),
-        "mode": mode.value,
-        "ts": int(time.time()),
+    return {
+        "temperature": round(temp, 2),
+        "humidity": round(hum, 2),
+        "vibration": round(vib, 2)
     }
 
-    client.publish(
-        mqtt_cfg["topic"],
-        json.dumps(payload),
-        qos=1,
-    )
-
-    time.sleep(mqtt_cfg.get("publish_interval", 1))
+while True:
+    payload = generate_sensor_data()
+    client.publish(TOPIC, json.dumps(payload))
+    print("Published:", payload)
+    time.sleep(INTERVAL)

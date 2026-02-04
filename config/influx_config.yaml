@@ -4,4 +4,4 @@ org: edge-org
 bucket: edge
 
 #replace with the real token from InfluxDB UI
-token: edge-token
+token: mMSshRBDhU2n6ZG7lqg_BGsuQV6pfxhAC7Rt-MQYQvKOCPXCqDZBPO9NpuZ6vMm1_coTOESJLEHPiEBO7tn2XA==
